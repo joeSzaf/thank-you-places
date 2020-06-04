@@ -11,9 +11,15 @@ class ShowType(DjangoObjectType):
         model = Show
 
 class Query(graphene.ObjectType):
-    shows = graphene.List(ShowType, search=graphene.String())
+    shows = graphene.List(ShowType, search=graphene.String(), userId=graphene.String())
 
-    def resolve_shows(self, info, search=None):
+    def resolve_shows(self, info, search=None, userId=None):
+        shows = Show.objects
+        if userId:
+            filter = (
+                Q(posted_by__id=userId)
+            )
+            shows = shows.filter(filter)
         if search:
             filter = (
                 Q(title__icontains=search) |
@@ -21,9 +27,9 @@ class Query(graphene.ObjectType):
                 Q(url__icontains=search) |
                 Q(posted_by__username__icontains=search)
             )
-            return Show.objects.filter(filter)
+            return shows.filter(filter)
 
-        return  Show.objects.all()
+        return shows.objects.all()
 
 class CreateShow(graphene.Mutation):
     show = graphene.Field(ShowType)
